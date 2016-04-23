@@ -1,0 +1,25 @@
+AllCops:
+  RunRailsCops: true
+Metrics/LineLength:
+  Max: 120
+Metrics/MethodLength:
+  CountComments: false # count full line comments?
+  Max: 30
+Metrics/BlockNesting:
+  Max: 5
+Metrics/ParameterLists:
+  Max: 10
+  CountKeywordArgs: true
+Metrics/AbcSize:
+  Max: 30
+Metrics/ClassLength:
+  CountComments: false # count full line comments?
+  Max: 200
+Style/EmptyLinesAroundClassBody:
+  EnforcedStyle: empty_lines
+Style/EmptyLinesAroundBlockBody:
+  Enabled: false
+Style/MultilineOperationIndentation:
+  Enabled: false
+Documentation:
+  Enabled: false
