@@ -2,7 +2,11 @@ module Ewallet
   module Api
     extend self
 
-    def register_user(user)
+    attr_reader :client_access_token
+
+    def register_user(user, client_access_token = nil)
+      @client_access_token = client_access_token
+
       return if user.customer_number.present?
 
       url       = config.base_url + '/ewallet/customers'
@@ -34,7 +38,9 @@ module Ewallet
       return response
     end
 
-    def inquiry_user(user)
+    def inquiry_user(user, client_access_token = nil)
+      @client_access_token = client_access_token
+
       url       = config.base_url + "/ewallet/customers/#{config.company_code}/#{user.ewallet_id}"
       method    = 'GET'
       timestamp = Time.current.strftime('%Y-%m-%dT%H:%M:%S.%L%z')
@@ -70,7 +76,11 @@ module Ewallet
       make_request(method, url, body, headers, auth_header)
     end
 
-    def charge(user, order)
+    def charge(payment, client_access_token = nil)
+      @client_access_token = client_access_token
+
+      order     = payment.order
+      user      = order.user
       url       = config.base_url + '/ewallet/payments'
       method    = 'POST'
       timestamp = Time.current.strftime('%Y-%m-%dT%H:%M:%S.%L%z')
@@ -80,7 +90,7 @@ module Ewallet
         transaction_id: order.number,
         reference_id: Time.current.to_i.to_s,
         request_date: timestamp,
-        amount: order.authorised_amount,
+        amount: payment.amount,
         currency: order.currency
       )
 
@@ -110,7 +120,9 @@ module Ewallet
       return response
     end
 
-    def payment_status(user, charge)
+    def payment_status(user, charge, client_access_token = nil)
+      @client_access_token = client_access_token
+
       timestamp = Time.current.strftime('%Y-%m-%dT%H:%M:%S.%L%:z')
       url       = config.base_url + "/ewallet/payments/#{config.company_code}/#{user.ewallet_id}?ReferenceID=#{charge.reference_id}&RequestDate=#{charge.request_date.to_date}&TransactionID=#{charge.transaction_id}"
       method    = 'GET'
@@ -124,7 +136,9 @@ module Ewallet
       return make_request(method, url, nil, headers, auth_header)
     end
 
-    def topup(user, amount, currency = 'IDR')
+    def topup(user, amount, currency = 'IDR', client_access_token = nil)
+      @client_access_token = client_access_token
+
       url       = config.base_url + '/ewallet/topup'
       method    = 'POST'
       timestamp = Time.current.strftime('%Y-%m-%dT%H:%M:%S.%L%:z')
@@ -160,7 +174,9 @@ module Ewallet
       return response
     end
 
-    def transaction_history(user, start_date, end_date, last_statement_id = '')
+    def transaction_history(user, start_date, end_date, last_statement_id = '', client_access_token = nil)
+      @client_access_token = client_access_token
+
       url       = config.base_url + "/ewallet/transactions/#{config.company_code}/#{user.ewallet_id}?EndDate=#{end_date}&LastAccountStatementID=#{last_statement_id}&StartDate=#{start_date}"
       timestamp = Time.current.strftime('%Y-%m-%dT%H:%M:%S.%L%:z')
       method    = 'GET'
@@ -175,7 +191,11 @@ module Ewallet
     end
 
     def oauth_token
-      @oauth_token ||= begin
+      client_access_token || server_access_token
+    end
+
+    def server_access_token
+      @server_access_token ||= begin
         url       = config.base_url + '/api/oauth/token'
         method    = 'POST'
 
@@ -184,11 +204,11 @@ module Ewallet
         }
 
         auth_pair = Base64.strict_encode64(config.client_id + ':' + config.client_secret)
-        auth_header = "Basic #{auth_pair}"
+        _auth_header = "Basic #{auth_pair}"
 
-        response = make_request(method, url, body, {}, auth_header, true)
+        response = make_request(method, url, body, {}, _auth_header, true)
 
-        @oauth_token = response.success? && ActiveSupport::JSON.decode(response.body).with_indifferent_access[:access_token]
+        response.success? && ActiveSupport::JSON.decode(response.body).with_indifferent_access[:access_token]
       end
     end
 

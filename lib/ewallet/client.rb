@@ -16,10 +16,10 @@ module Ewallet
 
       conn = Faraday.new(url: url)
 
-      if method == 'GET' && www
-        conn.get do |req|
+      if www
+        conn.post do |req|
           req.headers = r_headers
-          req.params = URI.encode_www_form(params) if params
+          req.body = URI.encode_www_form(params) if params
         end
       else
         body = params && ActiveSupport::JSON.encode(params)
