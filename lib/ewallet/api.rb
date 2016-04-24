@@ -13,7 +13,7 @@ module Ewallet
       method    = 'POST'
       timestamp = Time.current.strftime('%Y-%m-%dT%H:%M:%S.%L%z')
 
-      customer_number = config.company_code + '000' + user.id.to_s
+      customer_number = user.id.to_s
 
       body = {
         'CustomerName' => user.full_name,
